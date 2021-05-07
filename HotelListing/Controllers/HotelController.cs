@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HotelListing.IRepository;
 using HotelListing.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -35,37 +36,33 @@ namespace HotelListing.Controllers
             try
             {
                 var hotels = await _unitOfWork.Hotels.GetAll();
-                var results = _mapper.Map<List<HotelDTO>>(hotels);
-                return Ok(results); 
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError(ex, $"Something Went Wrong in the {nameof(GetHotels)}");
-                return StatusCode(500, "Internal Server Error , Please Try again later");
-            }
-        }
-
-        [HttpGet("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetHotel(int id)
-        {
-            try
-            {
-                var hotel = await _unitOfWork.Hotels.Get(q => q.Id == id);
-                var results = _mapper.Map<HotelDTO>(hotel);
+                var results = _mapper.Map<IList<HotelDTO>>(hotels);
                 return Ok(results);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Something Went Wrong in the {nameof(GetHotels)}");
-                return StatusCode(500, "Internal Server Error , Please Try again later");
+                return StatusCode(500, "Internal Server Error. Please Try Again Later.");
             }
         }
 
-
-
-
+        [Authorize]
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetHotel(int id)
+        {
+            try
+            {
+                var hotel = await _unitOfWork.Hotels.Get(q => q.Id == id, new List<string> { "Country" });
+                var result = _mapper.Map<HotelDTO>(hotel);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Something Went Wrong in the {nameof(GetHotel)}");
+                return StatusCode(500, "Internal Server Error. Please Try Again Later.");
+            }
+        }
     }
-
 }
